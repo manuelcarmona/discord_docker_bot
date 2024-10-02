@@ -69,6 +69,7 @@ Use the URL generated in the previous step to invite the bot to your server. The
 2. **Commands in Discord**: From any channel in the server where the bot is active, you can execute commands such as:
    - `/docker <container_name> start`: Start a specific container.
    - `/list`: List all running containers.
+   - `/contrainer_logs <container_name>`: Logs of containers.
 
 ## Requirements
 - **Docker**: The image requires Docker to manage containers on your server.
