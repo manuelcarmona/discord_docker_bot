@@ -1,8 +1,5 @@
 # Usar una imagen base de Python
-FROM python:slim
-
-# Crear un usuario y grupo no root
-RUN groupadd -r bot && useradd -r -g bot bot
+FROM python:alpine
 
 # Establecer el directorio de trabajo
 WORKDIR /app
@@ -10,8 +7,12 @@ WORKDIR /app
 # Copiar los archivos de la app al contenedor
 COPY . /app
 
+USER root
+
 # Instalar las dependencias
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && addgroup -S bot \
+    && adduser -S -G bot bot
 
 # Exponer el puerto si es necesario (no esencial en este caso)
 EXPOSE 8000
