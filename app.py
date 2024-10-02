@@ -24,11 +24,12 @@ async def on_ready():
 
 # Comando para gestionar contenedores de Docker (start, stop, restart)
 @bot.tree.command(name="docker", description="Management docker containers")
-@app_commands.describe(container_name="Container name", action="Action (start, stop, restart)")
+@app_commands.describe(container_name="Container name", action="Action (start, stop, restart, logs)")
 async def docker_command(interaction: discord.Interaction, container_name: str, action: str):
     await interaction.response.defer()
     try:
         container = client.containers.get(container_name)
+        logs = container.logs(tail=50).decode('utf-8')
         if action == 'start':
             container.start()
             await interaction.response.send_message(f'Container {container_name} started.')
@@ -38,8 +39,10 @@ async def docker_command(interaction: discord.Interaction, container_name: str, 
         elif action == 'restart':
             container.restart()
             await interaction.response.send_message(f'Container {container_name} restarted.')
+        elif action == 'logs':
+            await interaction.response.send_message(f"Logs of container {container_name}:\n```{logs}```")
         else:
-            await interaction.response.send_message(f'Invalid action: {action}. Use `start`, `stop`, or `restart`.')
+            await interaction.response.send_message(f'Invalid action: {action}. Use `start`, `stop`, `restart`, or `logs`.')
     except docker.errors.APIError as e:
         if action == 'stop':
             # Attempt to force stop the container if regular stop fails
@@ -49,6 +52,8 @@ async def docker_command(interaction: discord.Interaction, container_name: str, 
             await interaction.response.send_message(f'Error: {str(e)}')
     except docker.errors.NotFound:
         await interaction.response.send_message(f'Container not found: {container_name}')
+    except Exception as e:
+        await interaction.response.send_message(f'Error to get the logs: {str(e)}')
 
 # Comando para listar contenedores en estado running
 @bot.tree.command(name="list_containers", description="List of containers in 'running' state")
@@ -59,19 +64,6 @@ async def list_containers(interaction: discord.Interaction):
         await interaction.response.send_message(f"Running containers:\n{container_list}")
     else:
         await interaction.response.send_message("There are not containers in running state.")
-
-# Comando para mostrar los logs de un contenedor
-@bot.tree.command(name="container_logs", description="Show the logs of a container")
-@app_commands.describe(container_name="Container name")
-async def container_logs(interaction: discord.Interaction, container_name: str):
-    try:
-        container = client.containers.get(container_name)
-        logs = container.logs(tail=50).decode('utf-8')  # Muestra solo las últimas 50 líneas de los logs
-        await interaction.response.send_message(f"Logs of container {container_name}:\n```{logs}```")
-    except docker.errors.NotFound:
-        await interaction.response.send_message(f'Container not found: {container_name}')
-    except Exception as e:
-        await interaction.response.send_message(f'Error to get the logs: {str(e)}')
 
 # Obtiene el token desde las variables de entorno
 token = os.getenv('DISCORD_TOKEN')
