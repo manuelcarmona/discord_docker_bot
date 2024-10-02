@@ -42,20 +42,20 @@ async def docker_command(interaction: discord.Interaction, container_name: str, 
         logs = container.logs(tail=50).decode('utf-8')
         if action == 'start':
             container.start()
-            await interaction.response.send_message(messages['container_started'].format(name=container_name))
+            await interaction.response.send_message(f'Container {container_name} started.')
         elif action == 'stop':
             container.stop()
-            await interaction.response.send_message(messages['container_stopped'].format(name=container_name))
+            await interaction.response.send_message(f'Container {container_name} stopped.')
         elif action == 'restart':
             container.restart()
-            await interaction.response.send_message(messages['container_restarted'].format(name=container_name))
+            await interaction.response.send_message(f'Container {container_name} restarted.')
         elif action == 'logs':
             container.logs()
-            await interaction.response.send_message(messages['logs_header'].format(name=container_name))
+            await interaction.response.send_message(f"Logs of container {container_name}:\n```{logs}```")
         else:
             await interaction.response.send_message(f'Invalid action: {action}. Use `start`, `stop`, `restart` or `logs`.')
     except docker.errors.NotFound:
-        await interaction.response.send_message(messages['container_not_found'].format(name=container_name))
+        await interaction.response.send_message(f'Container not found: {container_name}')
 
 # Comando para listar contenedores en estado running
 @bot.tree.command(name="list", description="List of containers in 'running' state")
