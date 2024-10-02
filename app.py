@@ -29,7 +29,6 @@ async def docker_command(interaction: discord.Interaction, container_name: str, 
     await interaction.response.defer()
     try:
         container = client.containers.get(container_name)
-        logs = container.logs(tail=50).decode('utf-8')
         if action == 'start':
             container.start()
             await interaction.response.send_message(f'Container {container_name} started.')
@@ -39,10 +38,18 @@ async def docker_command(interaction: discord.Interaction, container_name: str, 
         elif action == 'restart':
             container.restart()
             await interaction.response.send_message(f'Container {container_name} restarted.')
-        elif action == 'logs':
-            await interaction.response.send_message(f"Logs of container {container_name}:\n```{logs}```")
+        @app_commands.describe(container_name="Container name")
+async def container_logs(interaction: discord.Interaction, container_name: str):
+    try:
+        container = client.containers.get(container_name)
+        
+        await interaction.response.send_message(f"Logs of container {container_name}:\n```{logs}```")
+    except docker.errors.NotFound:
+        await interaction.response.send_message(f'Container not found: {container_name}')
+    except Exception as e:
+        await interaction.response.send_message(f'Error to get the logs: {str(e)}')
         else:
-            await interaction.response.send_message(f'Invalid action: {action}. Use `start`, `stop`, `restart`, or `logs`.')
+            await interaction.response.send_message(f'Invalid action: {action}. Use `start`, `stop`, or `restart`.')
     except docker.errors.APIError as e:
         if action == 'stop':
             # Attempt to force stop the container if regular stop fails
@@ -52,8 +59,6 @@ async def docker_command(interaction: discord.Interaction, container_name: str, 
             await interaction.response.send_message(f'Error: {str(e)}')
     except docker.errors.NotFound:
         await interaction.response.send_message(f'Container not found: {container_name}')
-    except Exception as e:
-        await interaction.response.send_message(f'Error to get the logs: {str(e)}')
 
 # Comando para listar contenedores en estado running
 @bot.tree.command(name="list_containers", description="List of containers in 'running' state")
