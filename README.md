@@ -25,11 +25,14 @@ Here’s an example of how to configure the bot using `docker-compose`:
 ```yaml
 services:
   discord-bot:
-    image: manucarcor/discord_docker_bot:latest
-    environment:
-      - DISCORD_TOKEN=your_discord_token
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      container_name: discord_docker_bot
+      image: manucarcor/discord_docker_bot:latest
+      environment:
+         - DISCORD_TOKEN=your_discord_token
+      volumes:
+         - /var/run/docker.sock:/var/run/docker.sock
+      restart: unless-stopped
+
 ```
 
 ## How to Set Up Your Discord Bot
