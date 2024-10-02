@@ -1,5 +1,4 @@
 import os
-import json
 import discord
 import docker
 from discord.ext import commands
@@ -13,59 +12,66 @@ intents.message_content = True
 client = docker.from_env()
 bot = commands.Bot(command_prefix='', intents=intents)  # Dejar command_prefix vacío para usar solo slash commands
 
-# Cargar el archivo de idioma basado en la variable de entorno
-language = os.getenv('LANGUAGE', 'en')  # Valor predeterminado: inglés
-try:
-    with open(f'messages_{language}.json', 'r') as f:
-        messages = json.load(f)
-except FileNotFoundError:
-    print(f"Archivo de idioma no encontrado: messages_{language}.json. Usando inglés por defecto.")
-    with open('messages_en.json', 'r') as f:
-        messages = json.load(f)
-
 # Evento de activación del bot
 @bot.event
 async def on_ready():
     print(f'Bot {bot.user} is connected and ready!')
     try:
         synced = await bot.tree.sync()  # Sincronizar slash commands con Discord
-        print(f"Slash commands synchronized: {len(synced)} commands")
+        print(f"Slash commands sincronizados: {len(synced)} comandos")
     except Exception as e:
-        print(f"Error to synchronize slash commands: {e}")
+        print(f"Error al sincronizar slash commands: {e}")
 
-# Comandos de Docker (start, stop, restart) en un solo comando /docker
-@bot.tree.command(name="docker", description="Management a docker container")
-@app_commands.describe(container_name="Container's name", action="Action to do (start, stop, restart, logs)")
+# Comando para gestionar contenedores de Docker (start, stop, restart)
+@bot.tree.command(name="docker", description="Management docker containers")
+@app_commands.describe(container_name="Container name", action="Action (start, stop, restart)")
 async def docker_command(interaction: discord.Interaction, container_name: str, action: str):
+    await interaction.response.defer()
     try:
         container = client.containers.get(container_name)
-        logs = container.logs(tail=50).decode('utf-8')
         if action == 'start':
             container.start()
             await interaction.response.send_message(f'Container {container_name} started.')
         elif action == 'stop':
-            container.stop()
-            await interaction.response.send_message(f'Container {container_name} stopped.')
+            container.stop(timeout=10)
+            await interaction.followup.send(f'Container {container_name} stopped.')
         elif action == 'restart':
             container.restart()
             await interaction.response.send_message(f'Container {container_name} restarted.')
-        elif action == 'logs':
-            container.logs()
-            await interaction.response.send_message(f"Logs of container {container_name}:\n```{logs}```")
         else:
-            await interaction.response.send_message(f'Invalid action: {action}. Use `start`, `stop`, `restart` or `logs`.')
+            await interaction.response.send_message(f'Invalid action: {action}. Use `start`, `stop`, or `restart`.')
+    except docker.errors.APIError as e:
+        if action == 'stop':
+            # Attempt to force stop the container if regular stop fails
+            container.kill()
+            await interaction.response.send_message(f'Container {container_name} forcefully stopped.')
+        else:
+            await interaction.response.send_message(f'Error: {str(e)}')
     except docker.errors.NotFound:
         await interaction.response.send_message(f'Container not found: {container_name}')
 
 # Comando para listar contenedores en estado running
-@bot.tree.command(name="list", description="List of containers in 'running' state")
+@bot.tree.command(name="list_containers", description="List of containers in 'running' state")
 async def list_containers(interaction: discord.Interaction):
     running_containers = client.containers.list(filters={"status": "running"})
     if running_containers:
         container_list = "\n".join([container.name for container in running_containers])
-        await interaction.response.send_message(f"Containers running:\n{container_list}")
+        await interaction.response.send_message(f"Running containers:\n{container_list}")
     else:
-        await interaction.response.send_message("No containers running")
+        await interaction.response.send_message("There are not containers in running state.")
+
+# Comando para mostrar los logs de un contenedor
+@bot.tree.command(name="container_logs", description="Show the logs of a container")
+@app_commands.describe(container_name="Container name")
+async def container_logs(interaction: discord.Interaction, container_name: str):
+    try:
+        container = client.containers.get(container_name)
+        logs = container.logs(tail=50).decode('utf-8')  # Muestra solo las últimas 50 líneas de los logs
+        await interaction.response.send_message(f"Logs of container {container_name}:\n```{logs}```")
+    except docker.errors.NotFound:
+        await interaction.response.send_message(f'Container not found: {container_name}')
+    except Exception as e:
+        await interaction.response.send_message(f'Error to get the logs: {str(e)}')
 
 # Obtiene el token desde las variables de entorno
 token = os.getenv('DISCORD_TOKEN')
@@ -74,4 +80,4 @@ token = os.getenv('DISCORD_TOKEN')
 if token:
     bot.run(token)
 else:
-    print("Error: Discord token is undefined in environment vars.")
+    print("Error: El token de Discord no está definido en las variables de entorno.")
