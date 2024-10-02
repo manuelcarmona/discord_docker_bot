@@ -1,5 +1,5 @@
 # Usar una imagen base de Python
-FROM python:alpine
+FROM python:slim
 
 # Establecer el directorio de trabajo
 WORKDIR /app
@@ -7,13 +7,10 @@ WORKDIR /app
 # Copiar los archivos de la app al contenedor
 COPY . /app
 
-USER root
-
 # Instalar las dependencias
 RUN pip install --no-cache-dir -r requirements.txt \
-    && addgroup -S bot \
-    && adduser -S -G bot docker
-
+    && groupadd -r bot \
+    && useradd -r -g bot bot
 # Exponer el puerto si es necesario (no esencial en este caso)
 EXPOSE 8000
 
