@@ -12,7 +12,7 @@ USER root
 # Instalar las dependencias
 RUN pip install --no-cache-dir -r requirements.txt \
     && addgroup -S bot \
-    && adduser -S -G bot bot
+    && adduser -S -G bot docker
 
 # Exponer el puerto si es necesario (no esencial en este caso)
 EXPOSE 8000
