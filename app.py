@@ -1,4 +1,5 @@
 import os
+import re
 import discord
 import docker
 from discord.ext import commands
@@ -11,6 +12,11 @@ intents.message_content = True
 # Inicializar cliente de Docker y bot de Discord
 client = docker.from_env()
 bot = commands.Bot(command_prefix='', intents=intents)  # Dejar command_prefix vacío para usar solo slash commands
+
+# Función para eliminar códigos ANSI de una cadena
+def remove_ansi_codes(logs: str) -> str:
+    ansi_escape = re.compile(r'(?:\x1B[@-_][0-?]*[ -/]*[@-~])')
+    return ansi_escape.sub('', logs)
 
 # Evento de activación del bot
 @bot.event
@@ -38,8 +44,15 @@ async def docker_command(interaction: discord.Interaction, container_name: str, 
         elif action == 'restart':
             container.restart()
             await interaction.response.send_message(f'Container {container_name} restarted.')
+        elif action == 'logs':
+            logs = container.logs(tail=50).decode('utf-8')  # Obtener las últimas 50 líneas de los logs
+            clean_logs = remove_ansi_codes(logs)  # Eliminar códigos ANSI
+            if clean_logs:
+                await interaction.followup.send(f'Logs from {container_name} (last 50 lines):\n```{clean_logs}```')
+            else:
+                await interaction.followup.send(f'No logs available for {container_name}.')
         else:
-            await interaction.response.send_message(f'Invalid action: {action}. Use `start`, `stop`, or `restart`.')
+            await interaction.response.send_message(f'Invalid action: {action}. Use `start`, `stop`, `restart` or `logs`.')
     except docker.errors.APIError as e:
         if action == 'stop':
             # Attempt to force stop the container if regular stop fails
