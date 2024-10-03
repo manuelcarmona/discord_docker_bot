@@ -32,13 +32,14 @@ async def on_ready():
 @bot.tree.command(name="docker", description="Management docker containers")
 @app_commands.describe(container_name="Container name", action="Action (start, stop, restart, logs)")
 async def docker_command(interaction: discord.Interaction, container_name: str, action: str):
-    await interaction.response.defer()
+    
     try:
         container = client.containers.get(container_name)
         if action == 'start':
             container.start()
             await interaction.response.send_message(f'Container {container_name} started.')
         elif action == 'stop':
+            await interaction.response.defer()
             container.stop(timeout=10)
             await interaction.followup.send(f'Container {container_name} stopped.')
         elif action == 'restart':
