@@ -81,4 +81,4 @@ token = os.getenv('DISCORD_TOKEN')
 if token:
     bot.run(token)
 else:
-    print("Error: El token de Discord no está definido en las variables de entorno.")
+    print("Error: Discord token is undefined at environment vars.")
