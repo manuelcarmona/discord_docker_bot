@@ -15,13 +15,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag manucarcor/discord_docker_bot:$(date +%s)
+      run: docker build . --file Dockerfile --tag manucarcor/discord_docker_bot:1.$(date +%s)
 
     - uses: mr-smithers-excellent/docker-build-push@v6
       name: Build & push Docker image
       with:
         image: manucarcor/discord_docker_bot
-        tags: v1, latest
+        tags: 1.$(date +%s), latest
         registry: docker.io
         dockerfile: Dockerfile
         username: ${{ secrets.DOCKER_USERNAME }}
