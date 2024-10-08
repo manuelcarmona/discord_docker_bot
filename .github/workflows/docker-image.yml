@@ -19,6 +19,6 @@ jobs:
         image: manucarcor/discord_docker_bot
         tags: 1.$(date +%s), latest
         registry: docker.io
-        dockerfile: Dockerfile
+        dockerfile: ../Dockerfile
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
