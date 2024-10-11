@@ -1,5 +1,5 @@
 # Usar una imagen base de Python
-FROM python:3.10-alpine
+FROM python:3.11-alpine
 
 # Instalar dependencias del sistema
 RUN apk add --no-cache \
