@@ -16,7 +16,7 @@ bot = commands.Bot(command_prefix='', intents=intents)  # Dejar command_prefix v
 
 # fix logging and format correctly
 log_level = logging.INFO
-match os.getenv('LOGLEVEL'):
+match os.getenv('LOG_LEVEL').upper():
     case 'DEBUG':
         log_level = logging.DEBUG
     case 'INFO':
